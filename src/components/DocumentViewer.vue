@@ -32,7 +32,7 @@
   
   <script>
   import JsonEditor from './JsonEditor.vue'
-  
+  const API = import.meta.env.VITE_GO_API
   export default {
 	components: { JsonEditor },
 	props: {
@@ -65,7 +65,7 @@
 		this.loading = true
 		this.error = null
 		try {
-		  const response = await fetch(`http://localhost:8080/DB/collection?collection=${encodeURIComponent(this.collectionName)}`)
+		  const response = await fetch(`${API}DB/collection?collection=${encodeURIComponent(this.collectionName)}`)
 		  if (!response.ok) throw new Error('Failed to fetch documents')
 		  const data = await response.text()
 		  this.documents = JSON.parse(data)
@@ -80,7 +80,7 @@
 	  },
 	  async addDocument() {
 		try {
-		  const response = await fetch('http://localhost:8080/DB/document?collection=' + encodeURIComponent(this.collectionName), {
+		  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(this.collectionName), {
 			method: 'POST',
 			headers: {
 			  'Content-Type': 'application/json'
@@ -99,7 +99,7 @@
 	  async updateDocument(index, updatedDoc) {
 		try {
 		  const originalDoc = this.documents[index]
-		  const response = await fetch('http://localhost:8080/DB/document?collection=' + encodeURIComponent(this.collectionName), {
+		  const response = await fetch(`${API}DB/document?collection=${encodeURIComponent(this.collectionName)}`, {
 			method: 'PATCH',
 			headers: {
 			  'Content-Type': 'application/json'
@@ -117,7 +117,7 @@
 		if (!confirm('Are you sure you want to delete this document?')) return
 		
 		try {
-		  const response = await fetch('http://localhost:8080/DB/document?collection=' + encodeURIComponent(this.collectionName), {
+		  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(this.collectionName), {
 			method: 'DELETE',
 			headers: {
 			  'Content-Type': 'application/json'
