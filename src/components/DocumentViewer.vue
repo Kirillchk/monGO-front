@@ -9,7 +9,7 @@
 	  </div>
 	  
 	  <div v-if="loading" class="loading">Loading documents...</div>
-	  <div v-else-if="error" class="error">{{ error }}</div>
+	  <div v-else-if="false" class="error">{{ error }}</div>
 	  <div v-else>
 		<div v-for="(doc, index) in documents" :key="index" class="document-item">
 		  <JsonEditor :value="doc" :editable="true" @update="updateDocument(index, $event)" />
@@ -30,109 +30,107 @@
 	</div>
   </template>
   
-  <script>
+  <script setup>
+  import { ref, watch, onMounted } from 'vue'
   import JsonEditor from './JsonEditor.vue'
+  
   const API = import.meta.env.VITE_GO_API
-  export default {
-	components: { JsonEditor },
-	props: {
-	  collectionName: {
-		type: String,
-		required: true
-	  }
-	},
-	data() {
-	  return {
-		documents: [],
-		loading: false,
-		error: null,
-		showAddDialog: false,
-		newDocument: {}
-	  }
-	},
-	watch: {
-	  collectionName() {
-		this.fetchDocuments()
-	  }
-	},
-	mounted() {
-	  this.fetchDocuments()
-	},
-	methods: {
-	  async fetchDocuments() {
-		if (!this.collectionName) return
-		
-		this.loading = true
-		this.error = null
-		try {
-		  const response = await fetch(`${API}DB/collection?collection=${encodeURIComponent(this.collectionName)}`)
-		  if (!response.ok) throw new Error('Failed to fetch documents')
-		  const data = await response.text()
-		  this.documents = JSON.parse(data)
-		} catch (err) {
-		  this.error = err.message
-		} finally {
-		  this.loading = false
-		}
-	  },
-	  refreshDocuments() {
-		this.fetchDocuments()
-	  },
-	  async addDocument() {
-		try {
-		  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(this.collectionName), {
-			method: 'POST',
-			headers: {
-			  'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(this.newDocument)
-		  })
-		  
-		  if (!response.ok) throw new Error('Failed to add document')
-		  this.showAddDialog = false
-		  this.newDocument = {}
-		  this.fetchDocuments()
-		} catch (err) {
-		  alert(err.message)
-		}
-	  },
-	  async updateDocument(index, updatedDoc) {
-		try {
-		  const originalDoc = this.documents[index]
-		  const response = await fetch(`${API}DB/document?collection=${encodeURIComponent(this.collectionName)}`, {
-			method: 'PATCH',
-			headers: {
-			  'Content-Type': 'application/json'
-			},
-			body: JSON.stringify([originalDoc, updatedDoc])
-		  })
-		  
-		  if (!response.ok) throw new Error('Failed to update document')
-		  this.fetchDocuments()
-		} catch (err) {
-		  alert(err.message)
-		}
-	  },
-	  async deleteDocument(doc) {
-		if (!confirm('Are you sure you want to delete this document?')) return
-		
-		try {
-		  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(this.collectionName), {
-			method: 'DELETE',
-			headers: {
-			  'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(doc)
-		  })
-		  
-		  if (!response.ok) throw new Error('Failed to delete document')
-		  this.fetchDocuments()
-		} catch (err) {
-		  alert(err.message)
-		}
-	  }
+  
+  const props = defineProps({
+	collectionName: {
+	  type: String,
+	  required: true
+	}
+  })
+  
+  const documents = ref([])
+  const justText = ref('')
+  const loading = ref(false)
+  const error = ref(null)
+  const showAddDialog = ref(false)
+  const newDocument = ref({})
+  
+  const fetchDocuments = async () => {
+	if (!props.collectionName) return
+	
+	loading.value = true
+	error.value = null
+	try {
+	  const response = await fetch(`${API}DB/collection?collection=${encodeURIComponent(props.collectionName)}`)
+	  if (!response.ok) throw new Error('Failed to fetch documents')
+	  const data = await response.text()
+	  justText.value = data
+	  documents.value = JSON.parse(data)
+	} catch (err) {
+	  error.value = err.message
+	} finally {
+	  loading.value = false
 	}
   }
+  
+  const refreshDocuments = () => {
+	fetchDocuments()
+  }
+  
+  const addDocument = async () => {
+	try {
+	  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(props.collectionName), {
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(newDocument.value)
+	  })
+	  
+	  if (!response.ok) throw new Error('Failed to add document')
+	  showAddDialog.value = false
+	  newDocument.value = {}
+	  fetchDocuments()
+	} catch (err) {
+	  alert(err.message)
+	}
+  }
+  
+  const updateDocument = async (index, updatedDoc) => {
+	try {
+		updatedDoc[0]["_id"] = undefined
+	
+	  const response = await fetch(`${API}DB/document?collection=${encodeURIComponent(props.collectionName)}`, {
+		method: 'PATCH',
+		headers: {
+		  'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(updatedDoc)
+	  })
+	  
+	  if (!response.ok) throw new Error('Failed to update document')
+	  fetchDocuments()
+	} catch (err) {
+	  alert(err.message)
+	}
+  }
+  
+  const deleteDocument = async (doc) => {
+	if (!confirm('Are you sure you want to delete this document?')) return
+	
+	try {
+	  const response = await fetch(`${API}DB/document?collection=` + encodeURIComponent(props.collectionName), {
+		method: 'DELETE',
+		headers: {
+		  'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(doc)
+	  })
+	  
+	  if (!response.ok) throw new Error('Failed to delete document')
+	  fetchDocuments()
+	} catch (err) {
+	  alert(err.message)
+	}
+  }
+  
+  watch(() => props.collectionName, fetchDocuments)
+  onMounted(fetchDocuments)
   </script>
   
   <style scoped>
