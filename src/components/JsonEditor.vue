@@ -1,35 +1,29 @@
 <template>
 	<div class="json-editor">
-	  <div v-if="editable" class="editable-grid">
-		<div class="grid-header">
-		  <span class="key-header">Key</span>
-		  <span class="value-header">Value</span>
-		</div>
+	  <div v-if="editable" class="editable-grid compact">
 		<div v-for="(item, index) in flattenedData" :key="index" class="grid-row">
 		  <input
 			type="text"
 			v-model="item.key"
-			class="key-input"
+			class="key-input compact"
 			@blur="handleKeyChange(index, $event)"
+			placeholder="Key"
 		  />
 		  <input
 			type="text"
 			v-model="item.value"
-			class="value-input"
+			class="value-input compact"
 			@blur="updateJson"
+			placeholder="Value"
 		  />
 		</div>
-		<button @click="addNewField" class="add-btn">+</button>
-		<div v-if="!isValid" class="error">Invalid JSON structure</div>
+		<button @click="addNewField" class="add-btn compact">+</button>
+		<div v-if="!isValid" class="error">Invalid JSON</div>
 	  </div>
-	  <div v-else class="readonly-grid">
-		<div class="grid-header">
-		  <span class="key-header">Key</span>
-		  <span class="value-header">Value</span>
-		</div>
-		<div v-for="(value, key) in flattenedData" :key="key" class="grid-row">
-		  <span class="key-display">{{ key }}</span>
-		  <span class="value-display">{{ value }}</span>
+	  <div v-else class="readonly-grid compact">
+		<div v-for="(item, index) in flattenedData" :key="index" class="grid-row">
+		  <span class="key-display compact">{{ item.key }}</span>
+		  <span class="value-display compact">{{ item.value }}</span>
 		</div>
 	  </div>
 	</div>
@@ -141,7 +135,7 @@
   
   const addNewField = () => {
 	flattenedData.value.push({
-	  key: `newField${flattenedData.value.length + 1}`,
+	  key: '',
 	  value: ''
 	})
   }
@@ -161,64 +155,82 @@
   <style scoped>
   .json-editor {
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	font-size: 0.9em;
   }
   
   .editable-grid, .readonly-grid {
-	display: grid;
-	grid-template-columns: 1fr 2fr;
-	gap: 8px;
-	align-items: center;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
   }
   
-  .grid-header {
-	grid-column: 1 / -1;
-	display: grid;
-	grid-template-columns: 1fr 2fr;
-	font-weight: bold;
-	padding: 8px;
-	background-color: #f5f5f5;
-	border-radius: 4px;
+  .editable-grid.compact, .readonly-grid.compact {
+	gap: 2px;
   }
   
   .grid-row {
-	display: contents;
+	display: flex;
+	gap: 4px;
   }
   
   .key-input, .value-input {
-	padding: 8px;
+	padding: 4px 6px;
 	border: 1px solid #ddd;
-	border-radius: 4px;
-	height: 40px;
+	border-radius: 3px;
+	font-size: 0.85em;
+  }
+  
+  .key-input.compact, .value-input.compact {
+	padding: 3px 5px;
+	font-size: 0.8em;
   }
   
   .key-input {
-	font-weight: bold;
+	flex: 1;
+	min-width: 80px;
+  }
+  
+  .value-input {
+	flex: 2;
+	min-width: 120px;
   }
   
   .key-display, .value-display {
-	padding: 8px;
-	border: 1px solid transparent;
+	padding: 4px;
 	word-break: break-all;
+	font-size: 0.85em;
+  }
+  
+  .key-display.compact, .value-display.compact {
+	padding: 3px;
+	font-size: 0.8em;
   }
   
   .key-display {
+	flex: 1;
 	font-weight: bold;
   }
   
+  .value-display {
+	flex: 2;
+  }
+  
   .add-btn {
-	grid-column: 1;
-	width: 24px;
-	height: 24px;
-	padding: 0;
+	width: 100%;
+	padding: 4px;
 	background: #2196F3;
 	color: white;
 	border: none;
-	border-radius: 4px;
+	border-radius: 3px;
 	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 16px;
+	font-size: 0.9em;
+	margin-top: 4px;
+  }
+  
+  .add-btn.compact {
+	padding: 3px;
+	font-size: 0.8em;
+	margin-top: 2px;
   }
   
   .add-btn:hover {
@@ -226,9 +238,8 @@
   }
   
   .error {
-	grid-column: 1 / -1;
 	color: #e74c3c;
-	font-size: 0.8em;
-	margin-top: 5px;
+	font-size: 0.75em;
+	margin-top: 2px;
   }
   </style>

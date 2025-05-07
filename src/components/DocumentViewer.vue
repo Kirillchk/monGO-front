@@ -9,8 +9,8 @@
 	  </div>
 	  
 	  <div v-if="loading" class="loading">Loading documents...</div>
-	  <div v-else-if="false" class="error">{{ error }}</div>
-	  <div v-else>
+	  <div v-else-if="error" class="error">{{ error }}</div>
+	  <div v-else class="document-grid">
 		<div v-for="(doc, index) in documents" :key="index" class="document-item">
 		  <JsonEditor :value="doc" :editable="true" @update="updateDocument(index, $event)" />
 		  <button @click="deleteDocument(doc)" class="danger">Delete</button>
@@ -20,7 +20,7 @@
 	  <div v-if="showAddDialog" class="dialog-overlay">
 		<div class="dialog">
 		  <h3>Add New Document</h3>
-		  <JsonEditor :value="newDocument" :editable="true" @update="newDocument = $event" />
+		  <DocumentAdder :value="newDocument" :editable="true" @update="newDocument = $event" />
 		  <div class="dialog-actions">
 			<button @click="addDocument">Add</button>
 			<button @click="showAddDialog = false">Cancel</button>
@@ -33,6 +33,7 @@
   <script setup>
   import { ref, watch, onMounted } from 'vue'
   import JsonEditor from './JsonEditor.vue'
+import DocumentAdder from './DocumentAdder.vue'
   
   const API = import.meta.env.VITE_GO_API
   
@@ -44,7 +45,6 @@
   })
   
   const documents = ref([])
-  const justText = ref('')
   const loading = ref(false)
   const error = ref(null)
   const showAddDialog = ref(false)
@@ -58,9 +58,7 @@
 	try {
 	  const response = await fetch(`${API}DB/collection?collection=${encodeURIComponent(props.collectionName)}`)
 	  if (!response.ok) throw new Error('Failed to fetch documents')
-	  const data = await response.text()
-	  justText.value = data
-	  documents.value = JSON.parse(data)
+	  documents.value = await response.json()
 	} catch (err) {
 	  error.value = err.message
 	} finally {
@@ -93,7 +91,7 @@
   
   const updateDocument = async (index, updatedDoc) => {
 	try {
-		updatedDoc[0]["_id"] = undefined
+	  updatedDoc[0]["_id"] = undefined
 	
 	  const response = await fetch(`${API}DB/document?collection=${encodeURIComponent(props.collectionName)}`, {
 		method: 'PATCH',
@@ -135,8 +133,8 @@
   
   <style scoped>
   .document-viewer {
-	max-width: 1000px;
-	margin: 0 auto;
+	width: 100%;
+	padding: 20px;
   }
   
   .header {
@@ -151,17 +149,30 @@
 	gap: 10px;
   }
   
+  .document-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+	gap: 20px;
+  }
+  
   .document-item {
-	margin-bottom: 20px;
+	display: flex;
+	flex-direction: column;
 	padding: 15px;
 	background: white;
 	border-radius: 4px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	height: fit-content;
   }
   
   .danger {
 	margin-top: 10px;
 	background-color: #e74c3c;
+	color: white;
+	border: none;
+	padding: 8px 12px;
+	border-radius: 4px;
+	cursor: pointer;
   }
   
   .dialog-overlay {
@@ -192,5 +203,14 @@
 	justify-content: flex-end;
 	gap: 10px;
 	margin-top: 20px;
+  }
+  
+  .loading, .error {
+	padding: 20px;
+	text-align: center;
+  }
+  
+  .error {
+	color: #e74c3c;
   }
   </style>
