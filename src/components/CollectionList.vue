@@ -39,6 +39,7 @@
   </template>
   
   <script>
+  const API = import.meta.env.VITE_GO_API
   export default {
 	data() {
 	  return {
@@ -58,7 +59,7 @@
 		this.loading = true
 		this.error = null
 		try {
-		  const response = await fetch('http://localhost:8080/DB/collections')
+		  const response = await fetch(`${API}/DB/collections`)
 		  if (!response.ok) throw new Error('Failed to fetch collections')
 		  this.collections = await response.json()
 		} catch (err) {
@@ -77,7 +78,7 @@
 		if (!confirm(`Are you sure you want to delete collection "${collectionName}"?`)) return
 		
 		try {
-		  const response = await fetch(`http://localhost:8080/DB/collection?collection=${encodeURIComponent(collectionName)}`, {
+		  const response = await fetch(`${API}/DB/collection?collection=${encodeURIComponent(collectionName)}`, {
 			method: 'DELETE'
 		  })
 		  
@@ -94,7 +95,7 @@
 		}
   
 		try {
-		  const response = await fetch(`http://localhost:8080/DB/collection?collection=${this.newCollectionName.trim()}`, {
+		  const response = await fetch(`${API}/DB/collection?collection=${this.newCollectionName.trim()}`, {
 			method: 'POST',
 			headers: {
 			  'Content-Type': 'application/json'
